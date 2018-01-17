@@ -156,15 +156,13 @@ func createWalkFn(fr *fileReader, folderId int64) filepath.WalkFunc {
 			return nil
 		}
 
-		if dash.Dashboard.Id != 0 {
-			fr.log.Error("Cannot provision dashboard. Please remove the id property from the json file")
-			return nil
-		}
+		// id = 0 indicates ID validation should be avoided before writing to the db.
+		dash.Dashboard.Id = 0
 
 		cmd := &models.GetDashboardQuery{Slug: dash.Dashboard.Slug}
 		err = bus.Dispatch(cmd)
 
-		// if we don't have the dashboard in the db, save it!
+		// if we dont have the dashboard in the db, save it!
 		if err == models.ErrDashboardNotFound {
 			fr.log.Debug("saving new dashboard", "file", path)
 			_, err = fr.dashboardRepo.SaveDashboard(dash)
@@ -183,7 +181,6 @@ func createWalkFn(fr *fileReader, folderId int64) filepath.WalkFunc {
 
 		fr.log.Debug("loading dashboard from disk into database.", "file", path)
 		_, err = fr.dashboardRepo.SaveDashboard(dash)
-
 		return err
 	}
 }

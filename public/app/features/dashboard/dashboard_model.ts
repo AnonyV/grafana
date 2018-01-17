@@ -145,10 +145,7 @@ export class DashboardModel {
     };
 
     // get panel save models
-    copy.panels = _.chain(this.panels)
-      .filter(panel => panel.type !== 'add-panel')
-      .map(panel => panel.getSaveModel())
-      .value();
+    copy.panels = _.map(this.panels, panel => panel.getSaveModel());
 
     //  sort by keys
     copy = sortByKeys(copy);
@@ -233,6 +230,10 @@ export class DashboardModel {
   }
 
   cleanUpRepeats() {
+    this.processRepeats(true);
+  }
+
+  processRepeats(cleanUpOnly?: boolean) {
     if (this.snapshot || this.templating.list.length === 0) {
       return;
     }
@@ -247,33 +248,17 @@ export class DashboardModel {
 
     for (let i = 0; i < this.panels.length; i++) {
       let panel = this.panels[i];
-      if ((!panel.repeat || panel.repeatedByRow) && panel.repeatPanelId && panel.repeatIteration !== this.iteration) {
+      if (panel.repeat) {
+        if (!cleanUpOnly) {
+          this.repeatPanel(panel, i);
+        }
+      } else if (panel.repeatPanelId && panel.repeatIteration !== this.iteration) {
         panelsToRemove.push(panel);
       }
     }
 
     // remove panels
     _.pull(this.panels, ...panelsToRemove);
-
-    this.sortPanelsByGridPos();
-    this.events.emit('repeats-processed');
-  }
-
-  processRepeats() {
-    if (this.snapshot || this.templating.list.length === 0) {
-      return;
-    }
-
-    this.cleanUpRepeats();
-
-    this.iteration = (this.iteration || new Date().getTime()) + 1;
-
-    for (let i = 0; i < this.panels.length; i++) {
-      let panel = this.panels[i];
-      if (panel.repeat) {
-        this.repeatPanel(panel, i);
-      }
-    }
 
     this.sortPanelsByGridPos();
     this.events.emit('repeats-processed');
@@ -297,21 +282,21 @@ export class DashboardModel {
     return clone;
   }
 
-  getRowRepeatClone(sourceRowPanel, valueIndex, sourcePanelIndex) {
+  getRowRepeatClone(sourcePanel, valueIndex, sourcePanelIndex) {
     // if first clone return source
     if (valueIndex === 0) {
-      if (!sourceRowPanel.collapsed) {
+      if (!sourcePanel.collapsed) {
         let rowPanels = this.getRowPanels(sourcePanelIndex);
-        sourceRowPanel.panels = rowPanels;
+        sourcePanel.panels = rowPanels;
       }
-      return sourceRowPanel;
+      return sourcePanel;
     }
 
-    let clone = new PanelModel(sourceRowPanel.getSaveModel());
+    let clone = new PanelModel(sourcePanel.getSaveModel());
     // for row clones we need to figure out panels under row to clone and where to insert clone
     let rowPanels, insertPos;
-    if (sourceRowPanel.collapsed) {
-      rowPanels = _.cloneDeep(sourceRowPanel.panels);
+    if (sourcePanel.collapsed) {
+      rowPanels = _.cloneDeep(sourcePanel.panels);
       clone.panels = rowPanels;
       // insert copied row after preceding row
       insertPos = sourcePanelIndex + valueIndex;
@@ -348,7 +333,7 @@ export class DashboardModel {
       let copy;
 
       copy = this.getPanelRepeatClone(panel, index, panelIndex);
-      copy.scopedVars = copy.scopedVars || {};
+      copy.scopedVars = {};
       copy.scopedVars[variable.name] = option;
 
       if (panel.repeatDirection === REPEAT_DIR_VERTICAL) {
@@ -357,6 +342,7 @@ export class DashboardModel {
       } else {
         // set width based on how many are selected
         // assumed the repeated panels should take up full row width
+
         copy.gridPos.w = Math.max(GRID_COLUMN_COUNT / selectedOptions.length, minWidth);
         copy.gridPos.x = xPos;
         copy.gridPos.y = yPos;
@@ -377,7 +363,7 @@ export class DashboardModel {
     let yPos = panel.gridPos.y;
 
     function setScopedVars(panel, variableOption) {
-      panel.scopedVars = panel.scopedVars || {};
+      panel.scopedVars = {};
       panel.scopedVars[variable.name] = variableOption;
     }
 
@@ -395,7 +381,7 @@ export class DashboardModel {
         _.each(rowPanels, (rowPanel, i) => {
           setScopedVars(rowPanel, option);
           if (optionIndex > 0) {
-            this.updateRepeatedPanelIds(rowPanel, true);
+            this.updateRepeatedPanelIds(rowPanel);
           }
         });
         rowCopy.gridPos.y += optionIndex;
@@ -408,7 +394,7 @@ export class DashboardModel {
           setScopedVars(rowPanel, option);
           if (optionIndex > 0) {
             let cloneRowPanel = new PanelModel(rowPanel);
-            this.updateRepeatedPanelIds(cloneRowPanel, true);
+            this.updateRepeatedPanelIds(cloneRowPanel);
             // For exposed row additionally set proper Y grid position and add it to dashboard panels
             cloneRowPanel.gridPos.y += rowHeight * optionIndex;
             this.panels.splice(insertPos + i, 0, cloneRowPanel);
@@ -427,15 +413,11 @@ export class DashboardModel {
     }
   }
 
-  updateRepeatedPanelIds(panel: PanelModel, repeatedByRow?: boolean) {
+  updateRepeatedPanelIds(panel: PanelModel) {
     panel.repeatPanelId = panel.id;
     panel.id = this.getNextPanelId();
     panel.repeatIteration = this.iteration;
-    if (repeatedByRow) {
-      panel.repeatedByRow = true;
-    } else {
-      panel.repeat = null;
-    }
+    panel.repeat = null;
     return panel;
   }
 

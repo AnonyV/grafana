@@ -18,7 +18,6 @@ import GraphTooltip from './graph_tooltip';
 import { ThresholdManager } from './threshold_manager';
 import { EventManager } from 'app/features/annotations/all';
 import { convertValuesToHistogram, getSeriesValues } from './histogram';
-import config from 'app/core/config';
 
 /** @ngInject **/
 function graphDirective(timeSrv, popoverSrv, contextSrv) {
@@ -287,10 +286,6 @@ function graphDirective(timeSrv, popoverSrv, contextSrv) {
       }
 
       function buildFlotOptions(panel) {
-        let gridColor = '#c8c8c8';
-        if (config.bootData.user.lightTheme === true) {
-          gridColor = '#a1a1a1';
-        }
         const stack = panel.stack ? true : null;
         let options = {
           hooks: {
@@ -337,7 +332,7 @@ function graphDirective(timeSrv, popoverSrv, contextSrv) {
             borderWidth: 0,
             hoverable: true,
             clickable: true,
-            color: gridColor,
+            color: '#c8c8c8',
             margin: { left: 0, right: 0 },
             labelMarginX: 0,
           },

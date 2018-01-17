@@ -21,8 +21,6 @@ export interface AddPanelPanelState {
 export class AddPanelPanel extends React.Component<AddPanelPanelProps, AddPanelPanelState> {
   constructor(props) {
     super(props);
-    this.handleCloseAddPanel = this.handleCloseAddPanel.bind(this);
-    this.renderPanelItem = this.renderPanelItem.bind(this);
 
     this.state = {
       panelPlugins: this.getPanelPlugins(),
@@ -85,13 +83,6 @@ export class AddPanelPanel extends React.Component<AddPanelPanelProps, AddPanelP
     dashboard.removePanel(this.props.panel);
   };
 
-  handleCloseAddPanel(evt) {
-    evt.preventDefault();
-    const panelContainer = this.props.getPanelContainer();
-    const dashboard = panelContainer.getDashboard();
-    dashboard.removePanel(dashboard.panels[0]);
-  }
-
   renderPanelItem(panel, index) {
     console.log('render panel', index);
     return (
@@ -110,11 +101,10 @@ export class AddPanelPanel extends React.Component<AddPanelPanelProps, AddPanelP
             <i className="gicon gicon-add-panel" />
             <span className="add-panel__title">New Panel</span>
             <span className="add-panel__sub-title">Select a visualization</span>
-            <button className="add-panel__close" onClick={this.handleCloseAddPanel}>
-              <i className="fa fa-close" />
-            </button>
           </div>
-          <ScrollBar className="add-panel__items">{this.state.panelPlugins.map(this.renderPanelItem)}</ScrollBar>
+          <ScrollBar className="add-panel__items">
+            {this.state.panelPlugins.map(this.renderPanelItem.bind(this))}
+          </ScrollBar>
         </div>
       </div>
     );

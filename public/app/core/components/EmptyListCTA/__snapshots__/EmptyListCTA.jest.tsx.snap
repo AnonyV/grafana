@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`EmptyListCTA renders correctly 1`] = `
+exports[`CollorPalette renders correctly 1`] = `
 <div
   className="empty-list-cta"
 >

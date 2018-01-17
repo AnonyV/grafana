@@ -60,4 +60,3 @@ debug.test
 /vendor/**/*_test.go
 /vendor/**/.editorconfig
 /vendor/**/appengine*
-*.orig

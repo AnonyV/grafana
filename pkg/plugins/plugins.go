@@ -1,7 +1,6 @@
 package plugins
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,41 +34,14 @@ type PluginScanner struct {
 	errors     []error
 }
 
-type PluginManager struct {
-	log log.Logger
-}
-
-func NewPluginManager(ctx context.Context) (*PluginManager, error) {
-	err := initPlugins(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &PluginManager{
-		log: log.New("plugins"),
-	}, nil
-}
-
-func (p *PluginManager) Run(ctx context.Context) error {
-	<-ctx.Done()
-
-	for _, p := range DataSources {
-		p.Kill()
-	}
-
-	p.log.Info("Stopped Plugins", "error", ctx.Err())
-	return ctx.Err()
-}
-
-func initPlugins(ctx context.Context) error {
+func Init() error {
 	plog = log.New("plugins")
 
-	DataSources = map[string]*DataSourcePlugin{}
-	StaticRoutes = []*PluginStaticRoute{}
-	Panels = map[string]*PanelPlugin{}
-	Apps = map[string]*AppPlugin{}
-	Plugins = map[string]*PluginBase{}
+	DataSources = make(map[string]*DataSourcePlugin)
+	StaticRoutes = make([]*PluginStaticRoute, 0)
+	Panels = make(map[string]*PanelPlugin)
+	Apps = make(map[string]*AppPlugin)
+	Plugins = make(map[string]*PluginBase)
 	PluginTypes = map[string]interface{}{
 		"panel":      PanelPlugin{},
 		"datasource": DataSourcePlugin{},
@@ -81,8 +53,9 @@ func initPlugins(ctx context.Context) error {
 
 	// check if plugins dir exists
 	if _, err := os.Stat(setting.PluginsPath); os.IsNotExist(err) {
+		plog.Warn("Plugin dir does not exist", "dir", setting.PluginsPath)
 		if err = os.MkdirAll(setting.PluginsPath, os.ModePerm); err != nil {
-			plog.Error("Failed to create plugin dir", "dir", setting.PluginsPath, "error", err)
+			plog.Warn("Failed to create plugin dir", "dir", setting.PluginsPath, "error", err)
 		} else {
 			plog.Info("Plugin dir created", "dir", setting.PluginsPath)
 			scan(setting.PluginsPath)
@@ -97,18 +70,9 @@ func initPlugins(ctx context.Context) error {
 	for _, panel := range Panels {
 		panel.initFrontendPlugin()
 	}
-
-	for _, ds := range DataSources {
-		if ds.Backend {
-			err := ds.initBackendPlugin(ctx, plog)
-			if err != nil {
-				plog.Error("Failed to init plugin.", "error", err, "plugin", ds.Id)
-			}
-		}
-
-		ds.initFrontendPlugin()
+	for _, panel := range DataSources {
+		panel.initFrontendPlugin()
 	}
-
 	for _, app := range Apps {
 		app.initApp()
 	}

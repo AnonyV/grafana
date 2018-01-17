@@ -14,7 +14,9 @@ type TsdbQuery struct {
 type Query struct {
 	RefId         string
 	Model         *simplejson.Json
+	Depends       []string
 	DataSource    *models.DataSource
+	Results       []*TimeSeries
 	MaxDataPoints int64
 	IntervalMs    int64
 }

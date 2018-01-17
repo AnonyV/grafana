@@ -7,7 +7,6 @@ import { profiler } from 'app/core/profiler';
 import appEvents from 'app/core/app_events';
 import Drop from 'tether-drop';
 import { createStore } from 'app/stores/store';
-import colors from 'app/core/utils/colors';
 
 export class GrafanaCtrl {
   /** @ngInject */
@@ -26,8 +25,6 @@ export class GrafanaCtrl {
 
       $scope.dashAlerts = alertSrv;
     };
-
-    $rootScope.colors = colors;
 
     $scope.initDashboard = function(dashboardData, viewScope) {
       $scope.appEvent('dashboard-fetch-end', dashboardData);

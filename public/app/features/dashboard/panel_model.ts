@@ -26,7 +26,6 @@ export class PanelModel {
   repeatIteration?: number;
   repeatPanelId?: number;
   repeatDirection?: string;
-  repeatedByRow?: boolean;
   minSpan?: number;
   collapsed?: boolean;
   panels?: any;
